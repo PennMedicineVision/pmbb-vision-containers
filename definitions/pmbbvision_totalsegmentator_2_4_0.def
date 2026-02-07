@@ -1,0 +1,54 @@
+# Filename: pmbbvision_totalsegmentator_2_4_0.def
+
+# Build an apptainer containing a python venv with TotalSegmentator installed
+
+Bootstrap: localimage
+From: ubuntu_24.04.sif
+
+# The %post section contains the commands to be run during the build process
+
+%files
+../data/python-gdcm /opt/python-gdcm
+
+%post
+
+ls /opt
+DEBIAN_FRONTEND=noninteractive apt-get -y update
+DEBIAN_FRONTEND=noninteractive apt-get -y upgrade
+DEBIAN_FRONTEND=noninteractive apt-get -y install wget
+DEBIAN_FRONTEND=noninteractive apt-get -y install python3
+DEBIAN_FRONTEND=noninteractive apt-get -y install python3-pip
+DEBIAN_FRONTEND=noninteractive apt-get -y install python3-venv
+DEBIAN_FRONTEND=noninteractive apt-get -y install git
+DEBIAN_FRONTEND=noninteractive apt-get -y install libssl-dev
+DEBIAN_FRONTEND=noninteractive apt-get -y install build-essential
+DEBIAN_FRONTEND=noninteractive apt-get -y install swig
+#DEBIAN_FRONTEND=noninteractive apt-get -y install git-lfs
+
+# fix timezone
+ln -fs /usr/share/zoneinfo/America/New_York /etc/localtime
+dpkg-reconfigure --frontend noninteractive tzdata
+
+
+
+# NOTE there are no "users" in the container; the commands
+#      here are effectively run by "root"
+
+# Install this from source for FIPS compliance
+# git clone --recurse-submodules https://github.com/tfmoraes/python-gdcm /opt/python-gdcm
+
+# create a venv for installation
+python3 -m venv /opt/totalsegmentator_env
+. /opt/totalsegmentator_env/bin/activate
+
+# install totalsegmentator
+/opt/totalsegmentator_env/bin/pip install -U pip setuptools wheel
+/opt/totalsegmentator_env/bin/pip install /opt/python-gdcm/
+/opt/totalsegmentator_env/bin/pip install totalsegmentator==2.4.0
+
+%environment
+
+# cannot activate venv at run time, so set environment
+# variables so that the "numpy_env" venv is used at run time
+
+export PATH=/opt/totalsegmentator_env/bin:/us
